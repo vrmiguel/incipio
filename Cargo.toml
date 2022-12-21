@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 cstr = "0.2.11"
 heapless = "0.7.16"
-nix = { version = "0.26.1", features = ["process", "fs"] }
+nix = { version = "0.26.1", features = ["process", "fs", "mman"] }
 
 [build-dependencies]
 fastrand = "1.8.0"

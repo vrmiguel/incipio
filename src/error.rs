@@ -2,6 +2,8 @@ use nix::errno::Errno;
 
 #[derive(Debug)]
 pub enum Error {
+    UnexpectedEmptyFile,
+    MmapFailed,
     NotRunningAsInitSystem,
     Errno(Errno),
 }
