@@ -1,5 +1,6 @@
 #![no_std]
 
+mod error;
 /// Utilities related to (un)mounting filesystems
 pub mod mount;
 /// Utilities related to reading or setting PID values
@@ -9,23 +10,32 @@ pub mod signal;
 /// Utilities related to waiting for processes to exit
 pub mod wait;
 
-use core::ops::Not;
-
+pub use error::{Error, Result};
+use mount::mount_pseudo_filesystems;
 use nix::libc::exit;
-use pid::is_running_as_init_system;
+use pid::ensure_running_as_init_system;
+use signal::install_signal_handler;
 
-fn run() -> i32 {
-    if is_running_as_init_system().not() {
-        return 1;
-    }
+fn run() -> Result<()> {
+    // Make sure we're running with PID 1.
+    ensure_running_as_init_system()?;
 
-    0
+    // Get our signal handler up and running
+    install_signal_handler()?;
+
+    // Mount procfs, sysfs, /run and /dev
+    mount_pseudo_filesystems()?;
+
+    Ok(())
 }
 
 fn main() {
-    let status_code = run();
-
-    // Safety: there are no more destructors to be run
-    // at this point
-    unsafe { exit(status_code) }
+    match run() {
+        Ok(_) => {}
+        Err(_) => {
+            // Safety: there are no more destructors to be run
+            // at this point
+            unsafe { exit(1) }
+        }
+    }
 }

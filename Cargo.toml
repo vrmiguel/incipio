@@ -9,6 +9,7 @@ edition = "2021"
 cstr = "0.2.11"
 heapless = "0.7.16"
 nix = { version = "0.26.1", features = ["process"] }
+thiserror = "1.0.38"
 # phf = { version = "0.11.1", default-features = false, features = ["macros"] }
 
 [profile.release]
