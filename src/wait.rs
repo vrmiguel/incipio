@@ -25,6 +25,8 @@ pub fn wait_pid_no_interrupt(
     }
 }
 
+/// Reap processes spawned by `incipio`. The value returned is
+/// the amount of processes reaped.
 pub fn reap_child_processes() -> i32 {
     // Equivalent to `(pid_t)-1`; status is then requested for
     // any child process
