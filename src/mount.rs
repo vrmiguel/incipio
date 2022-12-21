@@ -1,4 +1,4 @@
-use core::ffi::CStr;
+use core::ffi::{c_char, CStr};
 
 use cstr::cstr;
 use nix::{
@@ -6,6 +6,8 @@ use nix::{
     sys::stat::Mode,
     unistd::mkdir,
 };
+
+use crate::exec::fork_and_execute_command;
 
 /// 755 means read and execute access for everyone and also write
 /// access for the owner of the file.
@@ -16,30 +18,45 @@ macro_rules! perms_0755 {
     };
 }
 
-const MODE_0755: &CStr = cstr!("mode=0755");
+static MODE_0755: &CStr = cstr!("mode=0755");
+static MOUNT: &CStr = cstr!("mount");
+static REMOUNT_RW: &CStr = cstr!("remount,rw");
+static ROOT: &CStr = cstr!("/");
+static FLAG_ALL: &CStr = cstr!("-a");
+static SWAPON: &CStr = cstr!("swapon");
 
-pub fn mount_filesystem() -> nix::Result<()> {
+pub fn mount_filesystem() -> crate::Result<()> {
     // Mount procfs, sysfs, /run and /dev
     mount_pseudo_filesystems()?;
 
     // Mount /dev/shm, /dev/pts/, /run/lock
     remaining_filesystem_runlevel()?;
 
-    remount_root()?;
+    // Remount root
+    // Runs `mount remount,rw /`
+    run([
+        MOUNT.as_ptr(),
+        REMOUNT_RW.as_ptr(),
+        ROOT.as_ptr(),
+        core::ptr::null(),
+    ])?;
+
+    // Mount all filesystems
+    // Runs `mount -a`
+    run([MOUNT.as_ptr(), FLAG_ALL.as_ptr(), core::ptr::null()])?;
+
+    // Turn on all swap partitions in /etc/fstab
+    // Runs `swapon -a`
+    run([SWAPON.as_ptr(), FLAG_ALL.as_ptr(), core::ptr::null()])?;
 
     Ok(())
 }
 
-fn remount_root() -> nix::Result<()> {
-    // TODO: should be equivalent to `mount remount,rw /`, which I'm
-    // not sure if the operation below is
-    mount(
-        None as Option<&str>,
-        "/",
-        None as Option<&str>,
-        MsFlags::MS_REMOUNT,
-        None as Option<&str>,
-    )
+fn run<const N: usize>(
+    command: [*const c_char; N],
+) -> crate::Result<()> {
+    // Arguments to `execv` must end with a NULL pointer
+    fork_and_execute_command(command)
 }
 
 /// Remaining FS run-level operations to take place after
