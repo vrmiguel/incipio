@@ -8,6 +8,7 @@ mod error;
 pub mod exec;
 /// Utilities related to files and filesystems
 pub mod fs;
+pub mod macros;
 /// Utilities related to (un)mounting filesystems
 pub mod mount;
 /// Utilities related to reading or setting PID values
@@ -39,6 +40,7 @@ fn run() -> Result<()> {
     // Mount procfs, sysfs, /run and /dev, /dev/pts, /dev/shm
     mount_filesystem()?;
 
+    // Set hostname, seed /dev/urandom and disable Ctrl+Alt+Del
     boot_up_system()?;
 
     Ok(())

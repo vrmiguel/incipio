@@ -21,7 +21,7 @@ use crate::{utils::NixPathExt, wait::wait_pid_no_interrupt};
 pub fn fork_and_execute_command<const N: usize>(
     commands: [*const c_char; N],
 ) -> crate::Result<()> {
-    // Check if we're able to run vfork here
+    // TODO: Check if we're able to run vfork here
     let fork_result = unsafe { fork()? };
 
     match fork_result {
