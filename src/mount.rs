@@ -1,5 +1,5 @@
-use nix::mount::{mount, MsFlags};
 use cstr::cstr;
+use nix::mount::{mount, MsFlags};
 
 pub fn mount_pseudo_filesystems() -> nix::Result<()> {
     let mode0755 = cstr!("mode=0755");

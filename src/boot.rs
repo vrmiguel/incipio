@@ -1,13 +1,14 @@
+use cstr::cstr;
 use nix::{
-    fcntl::{OFlag, open},
+    fcntl::{open, OFlag},
+    libc::{reboot, LINUX_REBOOT_CMD_CAD_OFF},
     sys::stat::Mode,
     unistd::{close, write},
 };
 
 use crate::{
-    mount::mount_pseudo_filesystems,
-    pid::ensure_running_as_init_system, rand_seed::SEED,
-    signal::install_signal_handler, utils::FileMapping,
+    exec::execute, mount::mount_pseudo_filesystems, rand_seed::SEED,
+    utils::FileMapping,
 };
 
 /// Seed `/dev/urandom`
@@ -24,7 +25,11 @@ fn seed_urandom() -> crate::Result<()> {
 }
 
 fn set_hostname() -> crate::Result<()> {
-    let fd = open("/proc/sys/kernel/hostname", OFlag::O_WRONLY, Mode::S_IWUSR)?;
+    let fd = open(
+        "/proc/sys/kernel/hostname",
+        OFlag::O_WRONLY,
+        Mode::S_IWUSR,
+    )?;
 
     if let Ok(mut mapping) = FileMapping::open("/etc/hostname") {
         write(fd, mapping.as_slice())?;
@@ -39,20 +44,28 @@ fn set_hostname() -> crate::Result<()> {
 }
 
 pub fn boot_up_system() -> crate::Result<()> {
-    // Make sure we're running with PID 1.
-    ensure_running_as_init_system()?;
-
-    // Get our signal handler up and running
-    install_signal_handler()?;
+    // Mount procfs, sysfs, /run and /dev
+    mount_pseudo_filesystems()?;
 
     // Set hostname by reading /etc/hostname
     set_hostname()?;
 
-    // Mount procfs, sysfs, /run and /dev
-    mount_pseudo_filesystems()?;
-
     // Seed /dev/urandom
     seed_urandom()?;
 
+    // Stop CAD from rebooting the system
+    disable_control_alt_del();
+
     Ok(())
+}
+
+/// Makes it so that Ctrl+Alt+Del (CAD, or tree-finger-salute) no
+/// longer reboots the system.
+///
+/// After this call, CAD will only send a SIGINT interrupt to PID 1.
+fn disable_control_alt_del() {
+    // After CAD is disabled, the CAD keystroke will cause a SIGINT
+    // signal to be sent to incipio causing it to reap children
+    // processes.
+    unsafe { reboot(LINUX_REBOOT_CMD_CAD_OFF) };
 }

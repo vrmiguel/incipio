@@ -1,19 +1,25 @@
-use core::{ffi::{c_int, c_void}, num::NonZeroUsize, ptr::NonNull, ops::Not};
+use core::{
+    ffi::{c_int, c_void},
+    num::NonZeroUsize,
+    ops::Not,
+    ptr::NonNull,
+};
 
+use libc_print::libc_eprintln;
 use nix::{
     fcntl::{open, OFlag},
     sys::{
-        mman::{mmap, MapFlags, ProtFlags, munmap},
+        mman::{mmap, munmap, MapFlags, ProtFlags},
         stat::{fstat, Mode},
     },
-    NixPath, unistd::close,
+    unistd::{access, close, AccessFlags},
+    NixPath,
 };
 
 use crate::Error;
 
-
 /// Represents a file opened through a memory mapping.
-/// 
+///
 /// The mapping is undone and the file is closed during Drop.
 pub struct FileMapping {
     raw_fd: c_int,
@@ -26,8 +32,7 @@ impl FileMapping {
     pub fn open<P: ?Sized + NixPath>(
         path: &P,
     ) -> crate::Result<Self> {
-        let raw_fd =
-            open(path, OFlag::O_RDONLY, Mode::S_IRUSR)?;
+        let raw_fd = open(path, OFlag::O_RDONLY, Mode::S_IRUSR)?;
         let file_length = {
             let status = fstat(raw_fd)?;
 
@@ -47,13 +52,15 @@ impl FileMapping {
                 ProtFlags::PROT_READ,
                 // Changes are not shared
                 MapFlags::MAP_PRIVATE,
+                // The file descriptor of the file being mapped
                 raw_fd,
                 // No offset
                 0,
             )
         }?;
 
-        let mapped_addr = NonNull::new(mapped_addr).ok_or(Error::MmapFailed)?;
+        let mapped_addr =
+            NonNull::new(mapped_addr).ok_or(Error::MmapFailed)?;
 
         Ok(Self {
             mapped_addr,
@@ -64,7 +71,10 @@ impl FileMapping {
 
     pub fn as_slice(&self) -> &[u8] {
         unsafe {
-            core::slice::from_raw_parts(self.mapped_addr.as_ptr() as *const u8, self.length.get())
+            core::slice::from_raw_parts(
+                self.mapped_addr.as_ptr() as *const u8,
+                self.length.get(),
+            )
         }
     }
 
@@ -73,10 +83,13 @@ impl FileMapping {
         // Close the file
         close(self.raw_fd)?;
 
-        // Unmap the mapping  
-        unsafe { munmap(self.mapped_addr.as_ptr(), self.length.get() as _)? };
+        // Unmap the mapping
+        unsafe {
+            munmap(self.mapped_addr.as_ptr(), self.length.get() as _)?
+        };
 
-        // Set the raw descriptor to an invalid state to signify that this mapping has been closed.
+        // Set the raw descriptor to an invalid state to signify that
+        // this mapping has been closed.
         self.raw_fd = -1;
         Ok(())
     }
@@ -91,10 +104,22 @@ impl Drop for FileMapping {
         if self.is_closed().not() {
             // Close the mapping without proper error checking if
             // the user hasn't closed it.
-            // 
-            // I guess this can be solved in a better way once linear types
-            // get added to Rust
-            let _ = self.close();
+            //
+            // I guess this can be solved in a better way once linear
+            // types get added to Rust
+            if let Err(err) = self.close() {
+                libc_eprintln!(
+                    "Failed to close memory mapping: {}",
+                    err.description()
+                )
+            }
         }
     }
 }
+
+pub trait NixPathExt: NixPath {
+    fn is_executable(&self) -> bool {
+        access(self, AccessFlags::X_OK).is_ok()
+    }
+}
+impl<P: NixPath + ?Sized> NixPathExt for P {}

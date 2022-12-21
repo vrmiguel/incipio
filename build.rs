@@ -7,8 +7,7 @@ fn main() {
         .expect("Failed to create rand_seed.rs");
     write!(
         rand_file,
-        "pub const SEED: &[u8; 512] = &{:?};",
-        seed
+        "pub const SEED: &[u8; 512] = &{seed:?};",
     )
     .expect("Failed to write to rand_seed.rs");
 }
