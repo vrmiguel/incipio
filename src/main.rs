@@ -9,6 +9,8 @@ pub mod pid;
 pub mod signal;
 /// Utilities related to waiting for processes to exit
 pub mod wait;
+/// A seed for rand generated at compile-time in build.rs
+mod rand_seed;
 
 pub use error::{Error, Result};
 use mount::mount_pseudo_filesystems;
