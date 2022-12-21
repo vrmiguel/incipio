@@ -1,7 +1,5 @@
 use nix::{
-    libc::{
-        LINUX_REBOOT_CMD_POWER_OFF, LINUX_REBOOT_CMD_RESTART,
-    },
+    libc::{LINUX_REBOOT_CMD_POWER_OFF, LINUX_REBOOT_CMD_RESTART},
     sys::{
         signal::{sigaction, SaFlags, SigAction, Signal},
         signalfd::SigSet,
@@ -57,9 +55,7 @@ pub fn install_signal_handler() -> nix::Result<()> {
         SigSet::empty(),
     );
 
-    for signal in
-        [Signal::SIGINT, Signal::SIGUSR1, Signal::SIGCHLD]
-    {
+    for signal in [Signal::SIGINT, Signal::SIGUSR1, Signal::SIGCHLD] {
         unsafe { sigaction(signal, &sig_action)? };
     }
 

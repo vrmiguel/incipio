@@ -8,8 +8,7 @@ edition = "2021"
 [dependencies]
 cstr = "0.2.11"
 heapless = "0.7.16"
-nix = { version = "0.26.1", features = ["process"] }
-thiserror = "1.0.38"
+nix = { version = "0.26.1", features = ["process", "fs"] }
 
 [build-dependencies]
 fastrand = "1.8.0"

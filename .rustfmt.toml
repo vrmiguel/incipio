@@ -5,4 +5,4 @@ wrap_comments = true
 reorder_imports = true
 group_imports = "StdExternalCrate"
 fn_call_width = 50
-max_width = 65
+max_width = 70

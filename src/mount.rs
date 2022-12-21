@@ -1,17 +1,13 @@
 use nix::mount::{mount, MsFlags};
 
 pub fn mount_pseudo_filesystems() -> nix::Result<()> {
-    let no_data: Option<&str> = None;
-
     // Mounting procfs
     mount(
         Some("proc"),
         "/proc",
         Some("proc"),
-        MsFlags::MS_NOEXEC
-            | MsFlags::MS_NOSUID
-            | MsFlags::MS_NODEV,
-        no_data,
+        MsFlags::MS_NOEXEC | MsFlags::MS_NOSUID | MsFlags::MS_NODEV,
+        None as Option<&str>,
     )?;
 
     // Mounting sys
@@ -19,10 +15,8 @@ pub fn mount_pseudo_filesystems() -> nix::Result<()> {
         Some("sys"),
         "/sys",
         Some("sysfs"),
-        MsFlags::MS_NOEXEC
-            | MsFlags::MS_NOSUID
-            | MsFlags::MS_NODEV,
-        no_data,
+        MsFlags::MS_NOEXEC | MsFlags::MS_NOSUID | MsFlags::MS_NODEV,
+        None as Option<&str>,
     )?;
 
     mount(
