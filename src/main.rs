@@ -24,6 +24,7 @@ pub mod wait;
 use boot::boot_up_system;
 pub use error::{Error, Result};
 pub use libc_print::libc_eprintln as eprintln;
+use mount::mount_filesystem;
 use nix::libc::{exit, EXIT_FAILURE};
 use pid::ensure_running_as_init_system;
 use signal::install_signal_handler;
@@ -35,7 +36,12 @@ fn run() -> Result<()> {
     // Get our signal handler up and running
     install_signal_handler()?;
 
-    boot_up_system()
+    // Mount procfs, sysfs, /run and /dev, /dev/pts, /dev/shm
+    mount_filesystem()?;
+
+    boot_up_system()?;
+
+    Ok(())
 }
 
 fn main() {

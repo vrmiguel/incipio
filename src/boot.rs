@@ -1,4 +1,3 @@
-use cstr::cstr;
 use nix::{
     fcntl::{open, OFlag},
     libc::{reboot, LINUX_REBOOT_CMD_CAD_OFF},
@@ -6,10 +5,7 @@ use nix::{
     unistd::{close, write},
 };
 
-use crate::{
-    exec::execute, mount::mount_pseudo_filesystems, rand_seed::SEED,
-    utils::FileMapping,
-};
+use crate::{rand_seed::SEED, utils::FileMapping};
 
 /// Seed `/dev/urandom`
 fn seed_urandom() -> crate::Result<()> {
@@ -44,9 +40,6 @@ fn set_hostname() -> crate::Result<()> {
 }
 
 pub fn boot_up_system() -> crate::Result<()> {
-    // Mount procfs, sysfs, /run and /dev
-    mount_pseudo_filesystems()?;
-
     // Set hostname by reading /etc/hostname
     set_hostname()?;
 
