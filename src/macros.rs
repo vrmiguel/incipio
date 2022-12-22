@@ -1,6 +1,6 @@
 #[macro_export]
 /// Builds the command array to be used with `execv`.
-/// 
+///
 /// For example,
 /// ```
 /// run!("ls", "-li")
@@ -11,6 +11,6 @@
 /// ```
 macro_rules! run {
     ($x:expr, $($y:expr),+) => (
-        $crate::exec::fork_and_execute_command([cstr::cstr!($x).as_ptr(), $(cstr::cstr!($y).as_ptr(),)* core::ptr::null()])?;
+        $crate::exec::fork_and_execute_command([cstr::cstr!($x).as_ptr(), $(cstr::cstr!($y).as_ptr(),)* core::ptr::null()])?
     )
 }
