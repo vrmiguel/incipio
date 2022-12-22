@@ -19,6 +19,8 @@ pub mod pid;
 mod rand_seed;
 /// Utilities related to handling signal interrupts
 pub mod signal;
+/// Utilities related to starting TTYs
+pub mod tty;
 /// General utilities
 pub mod utils;
 /// Utilities related to waiting for processes to exit

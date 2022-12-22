@@ -5,7 +5,7 @@ use nix::{
     unistd::{close, write},
 };
 
-use crate::{rand_seed::SEED, utils::FileMapping};
+use crate::{rand_seed::SEED, tty::open_ttys, utils::FileMapping};
 
 /// Seed `/dev/urandom`
 fn seed_urandom() -> crate::Result<()> {
@@ -48,6 +48,9 @@ pub fn boot_up_system() -> crate::Result<()> {
 
     // Stop CAD from rebooting the system
     disable_control_alt_del();
+
+    // Open TTYs
+    open_ttys();
 
     Ok(())
 }

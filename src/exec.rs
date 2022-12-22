@@ -20,6 +20,7 @@ use crate::{utils::NixPathExt, wait::wait_pid_no_interrupt};
 /// array.
 pub fn fork_and_execute_command<const N: usize>(
     commands: [*const c_char; N],
+    should_wait: bool,
 ) -> crate::Result<()> {
     // TODO: Check if we're able to run vfork here
     let fork_result = unsafe { fork()? };
@@ -27,7 +28,9 @@ pub fn fork_and_execute_command<const N: usize>(
     match fork_result {
         ForkResult::Child => execv_commands(commands)?,
         ForkResult::Parent { child } => {
-            wait_pid_no_interrupt(child, None)?;
+            if should_wait {
+                wait_pid_no_interrupt(child, None)?;
+            }
         }
     }
 
