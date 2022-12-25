@@ -1,3 +1,4 @@
+use libc_print::libc_eprintln;
 use nix::{
     errno::Errno,
     sys::wait::{waitpid, WaitPidFlag, WaitStatus},
@@ -14,7 +15,10 @@ pub fn wait_pid_no_interrupt(
 
     loop {
         match waitpid(pid, flags) {
-            Ok(wait_status) => return Ok(wait_status),
+            Ok(wait_status) => {
+                log_wait_status(wait_status);
+                return Ok(wait_status);
+            }
             Err(Errno::EINTR) => {
                 // We got interrupted while we were waiting.
                 // Let's try again.
@@ -22,6 +26,22 @@ pub fn wait_pid_no_interrupt(
             }
             Err(errno) => return Err(errno),
         }
+    }
+}
+
+fn log_wait_status(status: WaitStatus) {
+    match status {
+        WaitStatus::Exited(_pid, 0) => {
+            // Process exited normally
+        }
+        WaitStatus::Exited(_pid, exit_code) => {
+            libc_eprintln!("PID exited with code {}", exit_code);
+        }
+        WaitStatus::Signaled(_, signal, _) => {
+            libc_eprintln!("PID exited signaled with {}", signal);
+        }
+        // Other statuses are not relevant
+        _ => {}
     }
 }
 
