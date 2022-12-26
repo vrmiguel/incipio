@@ -2,6 +2,7 @@ use nix::errno::Errno;
 
 #[derive(Debug)]
 pub enum Error {
+    MountPointParser,
     UnexpectedEmptyFile,
     MmapFailed,
     NotRunningAsInitSystem,
@@ -16,6 +17,9 @@ impl Error {
             }
             Error::MmapFailed => "mmap returned a null pointer",
             Error::NotRunningAsInitSystem => "not running as PID 1",
+            Error::MountPointParser => {
+                "failed to parse mount point file"
+            }
             Error::Errno(errno) => errno.desc(),
         }
     }

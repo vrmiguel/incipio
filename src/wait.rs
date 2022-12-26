@@ -30,6 +30,7 @@ pub fn wait_pid_no_interrupt(
 }
 
 fn log_wait_status(status: WaitStatus) {
+    // TODO: obtain process's comm in order to have better logs
     match status {
         WaitStatus::Exited(_pid, 0) => {
             // Process exited normally

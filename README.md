@@ -13,4 +13,5 @@
 
 # Acknowledgments
 
-[hummingbird](https://github.com/Sweets/hummingbird) is the biggest inspiration for this project.
+* [hummingbird](https://github.com/Sweets/hummingbird) is the biggest inspiration for this project
+* [@capezotte](https://github.com/capezotte) for the help during the development of this project

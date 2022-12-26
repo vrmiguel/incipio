@@ -1,13 +1,14 @@
 use core::ffi::CStr;
 
 use cstr::cstr;
+use libc_print::libc_eprintln;
 use nix::{
-    mount::{mount, MsFlags},
+    mount::{mount, umount, MsFlags},
     sys::stat::Mode,
     unistd::mkdir,
 };
 
-use crate::run;
+use crate::{fs::MountPointParser, run};
 
 /// 755 means read and execute access for everyone and also write
 /// access for the owner of the file.
@@ -18,6 +19,7 @@ macro_rules! perms_0755 {
     };
 }
 
+static ROOT: &CStr = cstr!("/");
 static MODE_0755: &CStr = cstr!("mode=0755");
 
 pub fn mount_filesystem() -> crate::Result<()> {
@@ -28,15 +30,54 @@ pub fn mount_filesystem() -> crate::Result<()> {
     remaining_filesystem_runlevel()?;
 
     // Remount root
-    run!("mount", "remount,rw", "/");
+    run!("/usr/bin/mount", "remount,rw", "/");
 
     // Mount all filesystems
-    run!("mount", "-a");
+    run!("/usr/bin/mount", "-a");
 
     // Turn on all swap partitions in /etc/fstab
     // Runs `swapon -a`
-    run!("swapon", "-a");
+    run!("/usr/bin/swapon", "-a");
 
+    Ok(())
+}
+
+/// Read through the entries of `/proc/mounts` attempting to unmount the file systems found.
+/// 
+/// If an unmount operation fails, we'll try to remount the given FS as read-only
+pub fn unmount_all_filesystems() -> crate::Result<()> {
+    let parser = MountPointParser::new(cstr!("/proc/mounts"))?;
+    let is_root = |path: &CStr| path == ROOT;
+
+    for entry in parser {
+        let path = entry.path();
+
+        // We'll try to remount this file system as read-only
+        // if unmounting it fails or if it's the root partition
+        let mut should_remount = is_root(path);
+
+        if let Err(err) = umount(path) {
+            libc_eprintln!(
+                "Failed to unmount {:?}: {}",
+                path,
+                err
+            );
+            should_remount = true;
+        }
+
+        if should_remount {
+            if let Err(err) = mount(
+                None as Option<&str>,
+                path,
+                None as Option<&str>,
+                MsFlags::MS_REMOUNT | MsFlags::MS_RDONLY,
+                None as Option<&str>,
+            ) {
+                libc_eprintln!("Failed to remount {:?} as read-only: {}", path, err);
+            }
+        }
+    }
+    
     Ok(())
 }
 
