@@ -1,3 +1,4 @@
+use libc_print::libc_eprintln;
 use nix::{
     fcntl::{open, OFlag},
     libc::{reboot, LINUX_REBOOT_CMD_CAD_OFF},
@@ -5,7 +6,42 @@ use nix::{
     unistd::{close, write},
 };
 
-use crate::{rand_seed::SEED, tty::open_ttys, utils::FileMapping};
+use crate::{
+    mount::{turn_off_swap_partitions, unmount_all_filesystems},
+    rand_seed::SEED,
+    tty::open_ttys,
+    utils::FileMapping,
+};
+
+pub fn boot_up_system() -> crate::Result<()> {
+    // Set hostname by reading /etc/hostname
+    set_hostname()?;
+
+    // Seed /dev/urandom
+    seed_urandom()?;
+
+    // Stop CAD from rebooting the system
+    disable_control_alt_del();
+
+    // Open TTYs
+    open_ttys();
+
+    Ok(())
+}
+
+pub fn boot_down_system() -> crate::Result<()> {
+    if let Err(err) = turn_off_swap_partitions() {
+        libc_eprintln!(
+            "Failed to turn off swap partitions: {}",
+            err.description()
+        );
+    }
+
+    // nftw()
+    // nix::libc::nftw
+
+    unmount_all_filesystems()
+}
 
 /// Seed `/dev/urandom`
 fn seed_urandom() -> crate::Result<()> {
@@ -35,22 +71,6 @@ fn set_hostname() -> crate::Result<()> {
     }
 
     close(fd)?;
-
-    Ok(())
-}
-
-pub fn boot_up_system() -> crate::Result<()> {
-    // Set hostname by reading /etc/hostname
-    set_hostname()?;
-
-    // Seed /dev/urandom
-    seed_urandom()?;
-
-    // Stop CAD from rebooting the system
-    disable_control_alt_del();
-
-    // Open TTYs
-    open_ttys();
 
     Ok(())
 }

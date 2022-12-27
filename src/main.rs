@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-/// Utilities related to booting up the system
+/// Utilities related to booting the system up and down
 pub mod boot;
 /// Crate's error enum and Result alias
 mod error;

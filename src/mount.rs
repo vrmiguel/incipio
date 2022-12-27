@@ -42,9 +42,16 @@ pub fn mount_filesystem() -> crate::Result<()> {
     Ok(())
 }
 
-/// Read through the entries of `/proc/mounts` attempting to unmount the file systems found.
-/// 
-/// If an unmount operation fails, we'll try to remount the given FS as read-only
+pub fn turn_off_swap_partitions() -> crate::Result<()> {
+    run!("/usr/bin/swapoff", "-a");
+    Ok(())
+}
+
+/// Read through the entries of `/proc/mounts` attempting to unmount
+/// the file systems found.
+///
+/// If an unmount operation fails, we'll try to remount the given FS
+/// as read-only
 pub fn unmount_all_filesystems() -> crate::Result<()> {
     let parser = MountPointParser::new(cstr!("/proc/mounts"))?;
     let is_root = |path: &CStr| path == ROOT;
@@ -57,11 +64,7 @@ pub fn unmount_all_filesystems() -> crate::Result<()> {
         let mut should_remount = is_root(path);
 
         if let Err(err) = umount(path) {
-            libc_eprintln!(
-                "Failed to unmount {:?}: {}",
-                path,
-                err
-            );
+            libc_eprintln!("Failed to unmount {:?}: {}", path, err);
             should_remount = true;
         }
 
@@ -73,11 +76,15 @@ pub fn unmount_all_filesystems() -> crate::Result<()> {
                 MsFlags::MS_REMOUNT | MsFlags::MS_RDONLY,
                 None as Option<&str>,
             ) {
-                libc_eprintln!("Failed to remount {:?} as read-only: {}", path, err);
+                libc_eprintln!(
+                    "Failed to remount {:?} as read-only: {}",
+                    path,
+                    err
+                );
             }
         }
     }
-    
+
     Ok(())
 }
 

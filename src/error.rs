@@ -4,6 +4,7 @@ use nix::errno::Errno;
 pub enum Error {
     MountPointParser,
     UnexpectedEmptyFile,
+    WriteToString,
     MmapFailed,
     NotRunningAsInitSystem,
     Errno(Errno),
@@ -17,6 +18,7 @@ impl Error {
             }
             Error::MmapFailed => "mmap returned a null pointer",
             Error::NotRunningAsInitSystem => "not running as PID 1",
+            Error::WriteToString => "failed to write to string",
             Error::MountPointParser => {
                 "failed to parse mount point file"
             }
